@@ -14,7 +14,7 @@ If you find the paper or this repository helpful in your publications, please co
 ```bibtex
 @article{mallick2023multi,
   title = {Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator},
-  author = {Mallick, Samuel and Airaldi, Filippo and De Schutter, Bart and Dabiri, Azita},
+  author = {Mallick, Samuel and Airaldi, Filippo and Dabiri, Azita and De Schutter, Bart},
   journal={arXiv preprint arXiv:2312.05166},
   year = {2023},
   url = {https://arxiv.org/abs/2312.05166}
