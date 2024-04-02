@@ -6,6 +6,7 @@ import gymnasium as gym
 # import networkx as netx
 import numpy as np
 import numpy.typing as npt
+from model import get_centralized_dynamics
 
 
 class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
@@ -30,8 +31,8 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
     def reset(
         self,
         *,
-        seed: int | None = None,
-        options: dict[str, Any] | None = None,
+        seed=None,
+        options=None,
     ) -> tuple[npt.NDArray[np.floating], dict[str, Any]]:
         """Resets the state of the LTI system."""
         super().reset(seed=seed, options=options)
