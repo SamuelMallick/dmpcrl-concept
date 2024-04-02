@@ -1,11 +1,9 @@
 import pickle
-from typing import Dict, Tuple
 
 import casadi as cs
 
 # import networkx as netx
 import numpy as np
-
 from dmpcrl.utils.discretisation import zero_order_hold
 
 np.random.seed(1)
@@ -49,21 +47,19 @@ def get_P_tie():
     return P_tie
 
 
-def get_model_details() -> (
-    Tuple[
-        int,
-        int,
-        int,
-        np.ndarray,
-        float,
-        int,
-        float,
-        np.ndarray,
-        float,
-        np.ndarray,
-        float,
-    ]
-):
+def get_model_details() -> tuple[
+    int,
+    int,
+    int,
+    np.ndarray,
+    float,
+    int,
+    float,
+    np.ndarray,
+    float,
+    np.ndarray,
+    float,
+]:
     return (
         n,
         nx_l,
@@ -79,7 +75,7 @@ def get_model_details() -> (
     )
 
 
-def get_cent_model(discrete: bool) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_cent_model(discrete: bool) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Get A, B and L matrices for the centralised system Ax + Bu + Ld. If discrete the continuous dynamics are discretised using ZOH."""
     A_l = [
         np.array(
@@ -173,7 +169,7 @@ pars_init = [
 ]
 
 
-def get_pars_init_list() -> list[Dict]:
+def get_pars_init_list() -> list[dict]:
     """Get initial guesses for learnable parameters (exluding P_tie)."""
     return pars_init
 

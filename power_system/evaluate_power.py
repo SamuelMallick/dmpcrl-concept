@@ -295,7 +295,7 @@ else:
     U = np.squeeze(env.ep_actions)
     R = np.squeeze(env.ep_rewards)
 
-R_eps = [sum((R[ep_len * i : ep_len * (i + 1)])) for i in range(num_eps)]
+R_eps = [sum(R[ep_len * i : ep_len * (i + 1)]) for i in range(num_eps)]
 param_dict = {}
 time = np.arange(R.size)
 TD = []
@@ -308,7 +308,7 @@ if STORE_DATA:
         "data/power_eval_S_"
         + str(SCENARIO)
         + datetime.datetime.now().strftime("%d%H%M%S%f")
-        + str(".pkl"),
+        + ".pkl",
         "wb",
     ) as file:
         pickle.dump(X, file)

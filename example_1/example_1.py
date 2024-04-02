@@ -2,7 +2,7 @@ import contextlib
 import datetime
 import logging
 import pickle
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import casadi as cs
 import gymnasium as gym
@@ -13,6 +13,9 @@ import numpy as np
 import numpy.typing as npt
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
+from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+from dmpcrl.core.admm import g_map
+from dmpcrl.mpc.mpc_admm import MpcAdmm
 from gymnasium.wrappers import TimeLimit
 from mpcrl import LearnableParameter, LearnableParametersDict
 from mpcrl.core.experience import ExperienceReplay
@@ -21,10 +24,6 @@ from mpcrl.core.schedulers import ExponentialScheduler
 from mpcrl.util.control import dlqr
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
-
-from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
-from dmpcrl.core.admm import g_map
-from dmpcrl.mpc.mpc_admm import MpcAdmm
 
 CENTRALISED = False
 
@@ -37,10 +36,10 @@ G = g_map(Adj)  # mapping from global var to local var indexes for ADMM
 def get_centralized_dynamics(
     n: int,
     nx_l: int,
-    A_l: Union[cs.DM, cs.SX],
-    B_l: Union[cs.DM, cs.SX],
+    A_l: cs.DM | cs.SX,
+    B_l: cs.DM | cs.SX,
     A_c: npt.NDArray[np.floating],
-) -> tuple[Union[cs.DM, cs.SX], Union[cs.DM, cs.SX]]:
+) -> tuple[cs.DM | cs.SX, cs.DM | cs.SX]:
     """Creates the centralized representation of the dynamics from the real dynamics."""
     A = cs.SX.zeros(n * nx_l, n * nx_l)  # global state-space matrix A
     for i in range(n):
@@ -62,11 +61,11 @@ def get_learnable_centralized_dynamics(
     n: int,
     nx_l: int,
     nu_l: int,
-    A_list: List[Union[cs.DM, cs.SX]],
-    B_list: List[Union[cs.DM, cs.SX]],
-    A_c_list: List[List[npt.NDArray[np.floating]]],
-    B_c_list: List[List[npt.NDArray[np.floating]]],
-) -> tuple[Union[cs.DM, cs.SX], Union[cs.DM, cs.SX]]:
+    A_list: list[cs.DM | cs.SX],
+    B_list: list[cs.DM | cs.SX],
+    A_c_list: list[list[npt.NDArray[np.floating]]],
+    B_c_list: list[list[npt.NDArray[np.floating]]],
+) -> tuple[cs.DM | cs.SX, cs.DM | cs.SX]:
     """Creates the centralized representation of the dynamics from the learnable dynamics."""
     A = cs.SX.zeros(n * nx_l, n * nx_l)  # global state-space matrix A
     B = cs.SX.zeros(n * nx_l, n * nu_l)  # global state-space matix B
@@ -109,9 +108,9 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[npt.NDArray[np.floating], Dict[str, Any]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[npt.NDArray[np.floating], dict[str, Any]]:
         """Resets the state of the LTI system."""
         super().reset(seed=seed, options=options)
         self.x = np.tile([0, 0.15], self.n).reshape(
@@ -160,7 +159,7 @@ class LtiSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
 
     def step(
         self, action: cs.DM
-    ) -> Tuple[npt.NDArray[np.floating], float, bool, bool, Dict[str, Any]]:
+    ) -> tuple[npt.NDArray[np.floating], float, bool, bool, dict[str, Any]]:
         """Steps the LTI system."""
         action = action.full()
         x_new = self.A @ self.x + self.B @ action
@@ -227,8 +226,8 @@ class LinearMpc(Mpc[cs.SX]):
         x_ub_list = []
         b_list = []
         f_list = []
-        A_c_list: List[list] = []
-        B_c_list: List[list] = []
+        A_c_list: list[list] = []
+        B_c_list: list[list] = []
         for i in range(LtiSystem.n):
             V0_list.append(self.parameter(f"V0_{i}", (1,)))
             x_lb_list.append(self.parameter(f"x_lb_{i}", (LtiSystem.nx_l,)))
@@ -429,8 +428,7 @@ class LocalMpc(MpcAdmm):
             + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
             + 0.5
             * cs.sum2(
-                gammapowers
-                * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w.T @ s)
+                gammapowers * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w.T @ s)
             )
         )
 
@@ -637,7 +635,7 @@ if STORE_DATA:
         "data/C_"
         + str(CENTRALISED)
         + datetime.datetime.now().strftime("%d%H%M%S%f")
-        + str(".pkl"),
+        + ".pkl",
         "wb",
     ) as file:
         pickle.dump(X, file)

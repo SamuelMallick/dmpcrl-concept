@@ -1,10 +1,7 @@
-from typing import Dict, Tuple
-
 import casadi as cs
 
 # import networkx as netx
 import numpy as np
-
 from dmpcrl.utils.discretisation import forward_euler
 
 # real parameters of the power system - each is a list containing value for each of the four areas
@@ -193,13 +190,13 @@ def learnable_dynamics_from_parameters(D, R_f, M_a, T_CH, T_G, T_tie, ts):
     return A_d, B_d, A_load_d
 
 
-def get_cent_model() -> Tuple[np.ndarray, np.ndarray]:
+def get_cent_model() -> tuple[np.ndarray, np.ndarray]:
     return dynamics_from_parameters(
         D_list, R_f_list, M_a_list, T_CH_list, T_G_list, T_tie_list, ts
     )
 
 
-def get_model_dims() -> Tuple[int, int, int]:
+def get_model_dims() -> tuple[int, int, int]:
     return n, nx_l, nu_l
 
 
@@ -238,7 +235,7 @@ learnable_pars_init_3 = {
 }
 
 
-def get_learnable_pars_init_list() -> list[Dict]:
+def get_learnable_pars_init_list() -> list[dict]:
     return [
         learnable_pars_init_0,
         learnable_pars_init_1,

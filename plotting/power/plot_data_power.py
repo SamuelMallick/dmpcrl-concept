@@ -1,9 +1,7 @@
 import pickle
 
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FormatStrFormatter
 import numpy as np
-from dmpcrl.utils.tikz import save2tikz
 
 plt.rc("text", usetex=True)
 plt.rc("font", size=14)
@@ -40,8 +38,8 @@ with open(
     param_list = pickle.load(file)
 
 # plot the results
-TD_eps = [sum((TD[ep_len * i : ep_len * (i + 1)])) / ep_len for i in range(num_eps)]
-R_eps = [sum((R[ep_len * i : ep_len * (i + 1)])) for i in range(num_eps)]
+TD_eps = [sum(TD[ep_len * i : ep_len * (i + 1)]) / ep_len for i in range(num_eps)]
+R_eps = [sum(R[ep_len * i : ep_len * (i + 1)]) for i in range(num_eps)]
 
 print(f"Average cost = {sum(R_eps)/len(R_eps)}")
 # manually enter average cost of scenario and nominal MPC

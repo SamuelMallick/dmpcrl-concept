@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import casadi as cs
 import gymnasium as gym
@@ -95,9 +95,9 @@ class PowerSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
     def reset(
         self,
         *,
-        seed: Optional[int] = None,
-        options: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[npt.NDArray[np.floating], Dict[str, Any]]:
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[npt.NDArray[np.floating], dict[str, Any]]:
         """Resets the state of the system."""
         self.x = np.zeros((n * nx_l, 1))
         self.load = np.zeros((n, 1))
@@ -167,7 +167,7 @@ class PowerSystem(gym.Env[npt.NDArray[np.floating], npt.NDArray[np.floating]]):
 
     def step(
         self, action: cs.DM
-    ) -> Tuple[npt.NDArray[np.floating], float, bool, bool, Dict[str, Any]]:
+    ) -> tuple[npt.NDArray[np.floating], float, bool, bool, dict[str, Any]]:
         """Steps the system."""
         r = float(self.get_stage_cost(self.x, action))
         r_dist = self.get_dist_stage_cost(self.x, action)

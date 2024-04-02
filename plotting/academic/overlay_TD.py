@@ -2,10 +2,9 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
-from dmpcrl.utils.tikz import save2tikz
+
 # matplotlib.rcParams['mathtext.fontset'] = 'stix'
 # matplotlib.rcParams['font.family'] = 'STIXGeneral'
-from matplotlib.ticker import FormatStrFormatter
 
 # plt.rcParams.update({
 #   "text.usetex": True,
@@ -24,7 +23,10 @@ update_rate = 2
 limit = 20000
 
 fig, axs = plt.subplots(2, 1, constrained_layout=True, sharex=True)
-files = ["data/academic_ex_data/line_416/distributed.pkl", "data/academic_ex_data/line_416/centralised.pkl"]
+files = [
+    "data/academic_ex_data/line_416/distributed.pkl",
+    "data/academic_ex_data/line_416/centralised.pkl",
+]
 count = 0
 for filename in files:
     with open(
@@ -43,8 +45,22 @@ for filename in files:
         B = pickle.load(file)
         A_cs = pickle.load(file)
 
-    axs[0].plot(TD[:limit], "o", color=f"C{count}", markersize=1, rasterized = True, label='_nolegend_')
-    axs[1].plot(R[:limit], "o", color=f"C{count}", markersize=1, rasterized = True, label='_nolegend_')
+    axs[0].plot(
+        TD[:limit],
+        "o",
+        color=f"C{count}",
+        markersize=1,
+        rasterized=True,
+        label="_nolegend_",
+    )
+    axs[1].plot(
+        R[:limit],
+        "o",
+        color=f"C{count}",
+        markersize=1,
+        rasterized=True,
+        label="_nolegend_",
+    )
     axs[0].set_ylabel(r"$\delta$")
     axs[1].set_ylabel(r"$L$")
     axs[1].set_xlabel(r"$t$")
@@ -55,12 +71,12 @@ for filename in files:
     count += 1
 axs[0].set_xlim(-200, 21000)
 axs[1].set_xlim(-200, 21000)
-axs[0].plot(30000, 30, "o", color=f"C{0}", markersize=5, rasterized = True)
-axs[1].plot(30000, 30, "o", color=f"C{1}", markersize=5, rasterized = True)
+axs[0].plot(30000, 30, "o", color=f"C{0}", markersize=5, rasterized=True)
+axs[1].plot(30000, 30, "o", color=f"C{1}", markersize=5, rasterized=True)
 fig.set_size_inches(8, 3.5)
-fig.legend(["Distributed","Centralized"], frameon=True, ncols=2)
-#fig.align_ylabels()
-#fig.align_xlabels()
+fig.legend(["Distributed", "Centralized"], frameon=True, ncols=2)
+# fig.align_ylabels()
+# fig.align_xlabels()
 plt.savefig("data/TD.svg", format="svg", dpi=300)
 
 plt.show()

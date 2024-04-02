@@ -7,6 +7,9 @@ import numpy as np
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
 from csnlp.wrappers.wrapper import Nlp
+from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
+from dmpcrl.core.admm import g_map
+from dmpcrl.mpc.mpc_admm import MpcAdmm
 from env_power import PowerSystem
 from gymnasium.wrappers import TimeLimit
 from model_Hycon2 import (
@@ -25,10 +28,6 @@ from mpcrl.core.schedulers import ExponentialScheduler
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
 from plot_power import plot_power_system_data
-
-from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
-from dmpcrl.core.admm import g_map
-from dmpcrl.mpc.mpc_admm import MpcAdmm
 
 np.random.seed(1)
 
@@ -526,14 +525,14 @@ else:
     U = np.squeeze(env.ep_actions)
     R = np.squeeze(env.ep_rewards)
 
-R_eps = [sum((R[ep_len * i : ep_len * (i + 1)])) for i in range(num_eps)]
+R_eps = [sum(R[ep_len * i : ep_len * (i + 1)]) for i in range(num_eps)]
 param_dict = {}
 time = np.arange(R.size)
 TD = []
 TD_eps = []
 if LEARN:
     TD = np.squeeze(agent.td_errors) if CENTRALISED else agent.agents[0].td_errors
-    TD_eps = [sum((TD[ep_len * i : ep_len * (i + 1)])) / ep_len for i in range(num_eps)]
+    TD_eps = [sum(TD[ep_len * i : ep_len * (i + 1)]) / ep_len for i in range(num_eps)]
     if CENTRALISED:
         for name in mpc.to_learn:
             param_dict[name] = np.asarray(agent.updates_history[name])
@@ -550,7 +549,7 @@ if STORE_DATA:
         + str(CENTRALISED)
         + identifier
         + datetime.datetime.now().strftime("%d%H%M%S%f")
-        + str(".pkl"),
+        + ".pkl",
         "wb",
     ) as file:
         pickle.dump(X, file)

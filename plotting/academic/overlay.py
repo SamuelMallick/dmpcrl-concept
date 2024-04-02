@@ -2,7 +2,7 @@ import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
-from dmpcrl.utils.tikz import save2tikz
+
 # matplotlib.rcParams['mathtext.fontset'] = 'stix'
 # matplotlib.rcParams['font.family'] = 'STIXGeneral'
 from matplotlib.ticker import FormatStrFormatter
@@ -22,10 +22,13 @@ a_bnd = np.array([[-1], [1]])
 update_rate = 2
 
 limit = 20000
-lw=1
+lw = 1
 x_data = [i for i in range(0, limit, 2)]
 
-files = ["data/academic_ex_data/line_416/distributed.pkl", "data/academic_ex_data/line_416/centralised.pkl"]
+files = [
+    "data/academic_ex_data/line_416/distributed.pkl",
+    "data/academic_ex_data/line_416/centralised.pkl",
+]
 fig, axs = plt.subplots(4, 2, constrained_layout=True, sharex=True)
 col = 0
 for filename in files:
@@ -46,18 +49,36 @@ for filename in files:
         A_cs = pickle.load(file)
     # Plot parameters
     idx = 0
-    axs[0, 0].plot(x_data, b[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
-    axs[0, 1].plot(x_data,
-        bounds[idx][: (int(limit / update_rate)), [0, 2]], color=f"C{col}", linewidth=lw
+    axs[0, 0].plot(
+        x_data, b[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
     )
-    axs[1, 0].plot(x_data, f[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
-    axs[1, 1].plot(x_data,
-        V0[idx].squeeze()[: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    axs[0, 1].plot(
+        x_data,
+        bounds[idx][: (int(limit / update_rate)), [0, 2]],
+        color=f"C{col}",
+        linewidth=lw,
     )
-    axs[2, 0].plot(x_data, A[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
-    axs[2, 1].plot(x_data, B[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
-    axs[3, 0].plot(x_data, A_cs[1][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
-    axs[3, 1].plot(x_data, A_cs[2][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw)
+    axs[1, 0].plot(
+        x_data, f[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    )
+    axs[1, 1].plot(
+        x_data,
+        V0[idx].squeeze()[: (int(limit / update_rate))],
+        color=f"C{col}",
+        linewidth=lw,
+    )
+    axs[2, 0].plot(
+        x_data, A[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    )
+    axs[2, 1].plot(
+        x_data, B[idx][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    )
+    axs[3, 0].plot(
+        x_data, A_cs[1][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    )
+    axs[3, 1].plot(
+        x_data, A_cs[2][: (int(limit / update_rate))], color=f"C{col}", linewidth=lw
+    )
 
     col += 1
 
@@ -74,9 +95,9 @@ axs[3, 0].set_xlabel(r"$t$")
 for i in range(4):
     for j in range(2):
         axs[i, j].yaxis.set_major_formatter(FormatStrFormatter("%.2f"))
-#axs[3, 0].legend(['Distributed', 'Centralized'])
+# axs[3, 0].legend(['Distributed', 'Centralized'])
 fig.set_size_inches(7, 4)
-#fig.align_ylabels()
-#fig.align_xlabels()
+# fig.align_ylabels()
+# fig.align_xlabels()
 plt.savefig("data/pars_overlay.svg", format="svg")
 plt.show()
