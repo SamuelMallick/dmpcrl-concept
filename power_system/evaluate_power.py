@@ -270,7 +270,7 @@ class LoadedAgent(Agent):
 env = PowerSystem()
 num_eps = 100
 ep_len = 100
-env = MonitorEpisodes(TimeLimit(PowerSystem(), max_episode_steps=int(ep_len)))
+env = MonitorEpisodes(TimeLimit(env, max_episode_steps=int(ep_len)))
 
 if SCENARIO:
     mpc = ScenarioMpc()

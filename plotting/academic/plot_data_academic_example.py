@@ -24,7 +24,7 @@ update_rate = 2
 limit = 20000
 
 with open(
-    "data/academic_ex_data/line_416/centralised.pkl",
+    "data/academic_ex_data/line_416/distributed.pkl",
     "rb",
 ) as file:
     X = pickle.load(file)

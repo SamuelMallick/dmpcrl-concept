@@ -6,6 +6,8 @@ import casadi as cs
 import numpy as np
 import numpy.typing as npt
 
+np.random.seed(0)
+
 Adj = np.array(
     [[0, 1, 0], [1, 0, 1], [0, 1, 0]], dtype=np.int32
 )  # adjacency matrix of coupling in network
@@ -13,6 +15,31 @@ Adj = np.array(
 
 def get_adj():
     return Adj
+
+
+A_l = np.array([[0.9, 0.35], [0, 1.1]])
+B_l = np.array([[0.0813], [0.2]])
+A_c_l = np.array([[0, 0], [0, -0.1]])
+
+
+def get_real_model():
+    return A_l, B_l, A_c_l
+
+
+def get_sample_model():
+    p = 0.15
+    A_l_sample = A_l + np.array(
+        [
+            [np.random.uniform(-p, p), np.random.uniform(-p, p)],
+            [0, np.random.uniform(-p, p)],
+        ]
+    )
+    A_c_l_sample = A_c_l + np.array([[0, 0], [0, np.random.uniform(-p, p)]])
+    p = 0.1
+    B_l_sample = B_l + np.array(
+        [[np.random.uniform(-p, p)], [np.random.uniform(-p, p)]]
+    )
+    return A_l_sample, B_l_sample, A_c_l_sample
 
 
 def get_centralized_dynamics(
