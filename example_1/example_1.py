@@ -14,7 +14,7 @@ from dmpcrl.core.admm import g_map
 from dmpcrl.mpc.mpc_admm import MpcAdmm
 from env import LtiSystem
 from gymnasium.wrappers import TimeLimit
-from model import get_adj, get_centralized_dynamics, get_learnable_centralized_dynamics
+from model import get_adj, get_centralized_dynamics, get_learnable_centralized_dynamics, get_model_details, get_bounds
 from mpcrl import LearnableParameter, LearnableParametersDict
 from mpcrl.core.experience import ExperienceReplay
 from mpcrl.core.exploration import EpsilonGreedyExploration
@@ -22,298 +22,19 @@ from mpcrl.core.schedulers import ExponentialScheduler
 from mpcrl.util.control import dlqr
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
+from learnable_mpc import CentralizedMpc, LocalMpc
 
 CENTRALISED = False
 
 Adj = get_adj()
 G = g_map(Adj)  # mapping from global var to local var indexes for ADMM
-
-A_l_init = np.asarray([[1, 0.25], [0, 1]])
-B_l_init = np.asarray([[0.0312], [0.25]])
-A_c_l_init = np.array([[0, 0], [0, 0]])
-B_c_l_init = np.array([[0], [0]])
-learnable_pars_init_single = {
-    "V0": np.zeros((1, 1)),
-    "x_lb": np.reshape([0, 0], (-1, 1)),
-    "x_ub": np.reshape([1, 0], (-1, 1)),
-    "b": np.zeros(LtiSystem.nx_l),
-    "f": np.zeros(LtiSystem.nx_l + LtiSystem.nu_l),
-}
-
-
-class LinearMpc(Mpc[cs.SX]):
-    """The centralised MPC controller."""
-
-    horizon = 10
-    discount_factor = 0.9
-
-    A_init, B_init = get_centralized_dynamics(
-        LtiSystem.n, LtiSystem.nx_l, A_l_init, B_l_init, A_c_l_init
-    )
-
-    # add the initial guesses of the learable parameters
-    learnable_pars_init = {}
-    for i in range(LtiSystem.n):
-        for name, val in learnable_pars_init_single.items():
-            learnable_pars_init[f"{name}_{i}"] = val
-        learnable_pars_init["A_" + str(i)] = A_l_init
-        learnable_pars_init["B_" + str(i)] = B_l_init
-        for j in range(LtiSystem.n):
-            if i != j:
-                if Adj[i][j] == 1:
-                    learnable_pars_init["A_c_" + str(i) + "_" + str(j)] = A_c_l_init
-
-    def __init__(self) -> None:
-        N = self.horizon
-        gamma = self.discount_factor
-        w = LtiSystem.w
-        nx, nu = LtiSystem.nx, LtiSystem.nu
-        x_bnd, a_bnd = LtiSystem.x_bnd, LtiSystem.a_bnd
-        nlp = Nlp[cs.SX]()
-        super().__init__(nlp, N)
-
-        # learn parameters with topology knowledge
-        A_list = []
-        B_list = []
-        V0_list = []
-        x_lb_list = []
-        x_ub_list = []
-        b_list = []
-        f_list = []
-        A_c_list: list[list] = []
-        B_c_list: list[list] = []
-        for i in range(LtiSystem.n):
-            V0_list.append(self.parameter(f"V0_{i}", (1,)))
-            x_lb_list.append(self.parameter(f"x_lb_{i}", (LtiSystem.nx_l,)))
-            x_ub_list.append(self.parameter(f"x_ub_{i}", (LtiSystem.nx_l,)))
-            b_list.append(self.parameter(f"b_{i}", (LtiSystem.nx_l, 1)))
-            f_list.append(
-                self.parameter(f"f_{i}", (LtiSystem.nx_l + LtiSystem.nu_l, 1))
-            )
-
-            A_list.append(
-                self.parameter("A_" + str(i), (LtiSystem.nx_l, LtiSystem.nx_l))
-            )
-            B_list.append(
-                self.parameter("B_" + str(i), (LtiSystem.nx_l, LtiSystem.nu_l))
-            )
-
-            A_c_list.append([])
-            B_c_list.append([])
-            for j in range(LtiSystem.n):
-                A_c_list[i].append(None)
-                B_c_list[i].append(None)
-                if i != j:
-                    if Adj[i][j] == 1:
-                        A_c_list[i][j] = self.parameter(
-                            "A_c_" + str(i) + "_" + str(j),
-                            (LtiSystem.nx_l, LtiSystem.nx_l),
-                        )
-        # add listed params to one for intiialisation
-
-        V0 = cs.vcat(V0_list)
-        x_lb = cs.vcat(x_lb_list)
-        x_ub = cs.vcat(x_ub_list)
-        b = cs.vcat(b_list)
-        f = cs.vcat(f_list)
-
-        A, B = get_learnable_centralized_dynamics(
-            LtiSystem.n,
-            LtiSystem.nx_l,
-            LtiSystem.nu_l,
-            A_list,
-            B_list,
-            A_c_list,
-            B_c_list,
-        )
-
-        # variables (state, action, slack)
-        x, _ = self.state("x", nx)
-        u, _ = self.action(
-            "u", nu, lb=a_bnd[0].reshape(-1, 1), ub=a_bnd[1].reshape(-1, 1)
-        )
-        s, _, _ = self.variable("s", (nx, N), lb=0)
-
-        # dynamics
-        self.set_dynamics(lambda x, u: A @ x + B @ u + b, n_in=2, n_out=1)
-
-        # other constraints
-        self.constraint("x_lb", x_bnd[0].reshape(-1, 1) + x_lb - s, "<=", x[:, 1:])
-        self.constraint("x_ub", x[:, 1:], "<=", x_bnd[1].reshape(-1, 1) + x_ub + s)
-
-        # objective
-        S = cs.DM(
-            dlqr(self.A_init, self.B_init, 0.5 * np.eye(nx), 0.25 * np.eye(nu))[1]
-        )
-        gammapowers = cs.DM(gamma ** np.arange(N)).T
-        self.minimize(
-            cs.sum1(V0)
-            # + quad_form(S, x[:, -1])   # TODO I took this out for now cause we cant do it distributed
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + 0.5
-            * cs.sum2(
-                gammapowers * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w @ s)
-            )
-        )
-
-        # solver
-        opts = {
-            "expand": True,
-            "print_time": False,
-            "bound_consistency": True,
-            "calc_lam_x": True,
-            "calc_lam_p": False,
-            # "jit": True,
-            # "jit_cleanup": True,
-            "ipopt": {
-                # "linear_solver": "ma97",
-                # "linear_system_scaling": "mc19",
-                # "nlp_scaling_method": "equilibration-based",
-                "max_iter": 500,
-                "sb": "yes",
-                "print_level": 0,
-            },
-        }
-        self.init_solver(opts, solver="ipopt")
-
-
-class LocalMpc(MpcAdmm):
-    """MPC for agent inner prob in ADMM."""
-
-    rho = 0.5
-
-    horizon = 10
-    discount_factor = 0.9
-
-    A_init = np.asarray([[1, 0.25], [0, 1]])
-    B_init = np.asarray([[0.0312], [0.25]])
-    A_c_l_init = np.array([[0, 0], [0, 0]])
-
-    # learnable pars no related to coupling
-
-    def __init__(self, num_neighbours, my_index) -> None:
-        """Instantiate inner MPC for admm. My index is used to pick out own state from the grouped coupling states. It should be passed in via the mapping G (G[i].index(i))"""
-        N = self.horizon
-        gamma = self.discount_factor
-        w_full = LtiSystem.w
-        nx_l, nu_l = LtiSystem.nx_l, LtiSystem.nu_l
-        w = w_full[:, 0:nx_l].reshape(-1, 1)
-        x_bnd_full, a_bnd = LtiSystem.x_bnd, LtiSystem.a_bnd
-        x_bnd = (
-            x_bnd_full[0, 0:nx_l].reshape(-1, 1),
-            x_bnd_full[1, 0:nx_l].reshape(-1, 1),
-        )  # here assumed bounds are homogenous
-        nlp = Nlp[cs.SX]()
-        super().__init__(nlp, N)
-
-        # learnable pars
-
-        self.learnable_pars_init = {
-            "V0": np.zeros((1, 1)),
-            "x_lb": np.array([0, 0]).reshape(-1, 1),
-            "x_ub": np.array([1, 0]).reshape(-1, 1),
-            "b": np.zeros(LtiSystem.nx_l),
-            "f": np.zeros(LtiSystem.nx_l + LtiSystem.nu_l),
-            "A": self.A_init,
-            "B": self.B_init,
-        }
-
-        self.num_neighbours = num_neighbours
-        for i in range(
-            num_neighbours
-        ):  # add a learnable param init for each neighbours coupling matrix
-            self.learnable_pars_init["A_c_" + str(i)] = self.A_c_l_init
-
-        # fixed pars
-        # parameters
-
-        V0 = self.parameter("V0", (1,))
-        x_lb = self.parameter("x_lb", (nx_l,))
-        x_ub = self.parameter("x_ub", (nx_l,))
-        b = self.parameter("b", (nx_l, 1))
-        f = self.parameter("f", (nx_l + nu_l, 1))
-        A = self.parameter("A", (nx_l, nx_l))
-        B = self.parameter("B", (nx_l, nu_l))
-        A_c_list: list[np.ndarray] = []  # list of coupling matrices
-        for i in range(num_neighbours):
-            A_c_list.append(self.parameter("A_c_" + str(i), (nx_l, nx_l)))
-
-        # variables (state+coupling, action, slack)
-
-        x, x_c = self.augmented_state(num_neighbours, my_index, nx_l)
-
-        # TODO here assumed action bounds are homogenous
-        u, _ = self.action(
-            "u",
-            nu_l,
-            lb=a_bnd[0][0],
-            ub=a_bnd[1][0],
-        )
-        s, _, _ = self.variable("s", (nx_l, N), lb=0)
-
-        x_c_list = (
-            []
-        )  # store the bits of x that are couplings in a list for ease of access
-        for i in range(num_neighbours):
-            x_c_list.append(x_c[nx_l * i : nx_l * (i + 1), :])
-
-        # dynamics - added manually due to coupling
-
-        for k in range(N):
-            coup = cs.SX.zeros(nx_l, 1)
-            for i in range(num_neighbours):  # get coupling expression
-                coup += A_c_list[i] @ x_c_list[i][:, [k]]
-            self.constraint(
-                "dynam_" + str(k),
-                A @ x[:, [k]] + B @ u[:, [k]] + coup + b,
-                "==",
-                x[:, [k + 1]],
-            )
-
-        # other constraints
-
-        self.constraint(f"x_lb", x_bnd[0] + x_lb - s, "<=", x[:, 1:])
-        self.constraint(f"x_ub", x[:, 1:], "<=", x_bnd[1] + x_ub + s)
-
-        # objective
-        gammapowers = cs.DM(gamma ** np.arange(N)).T
-        self.set_local_cost(
-            V0
-            + cs.sum2(f.T @ cs.vertcat(x[:, :-1], u))
-            + 0.5
-            * cs.sum2(
-                gammapowers * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w.T @ s)
-            )
-        )
-
-        self.nx_l = nx_l
-        self.nu_l = nu_l
-
-        # solver
-
-        opts = {
-            "expand": True,
-            "print_time": False,
-            "bound_consistency": True,
-            "calc_lam_x": True,
-            "calc_lam_p": False,
-            # "jit": True,
-            # "jit_cleanup": True,
-            "ipopt": {
-                # "linear_solver": "ma97",
-                # "linear_system_scaling": "mc19",
-                # "nlp_scaling_method": "equilibration-based",
-                "max_iter": 2000,
-                "sb": "yes",
-                "print_level": 0,
-            },
-        }
-        self.init_solver(opts, solver="ipopt")
-
+rho = 0.5
+n, nx_l, nu_l = get_model_details()
+_, u_bnd, _ = get_bounds()
 
 # now, let's create the instances of such classes and start the training
 # centralised mpc and params
-mpc = LinearMpc()
+mpc = CentralizedMpc()
 learnable_pars = LearnableParametersDict[cs.SX](
     (
         LearnableParameter(name, val.shape, val, sym=mpc.parameters[name])
@@ -326,7 +47,7 @@ mpc_dist_list: list[Mpc] = []
 learnable_dist_parameters_list: list[LearnableParametersDict] = []
 fixed_dist_parameters_list: list = []
 for i in range(LtiSystem.n):
-    mpc_dist_list.append(LocalMpc(num_neighbours=len(G[i]) - 1, my_index=G[i].index(i)))
+    mpc_dist_list.append(LocalMpc(num_neighbours=len(G[i]) - 1, my_index=G[i].index(i), rho=rho))
     learnable_dist_parameters_list.append(
         LearnableParametersDict[cs.SX](
             (
@@ -344,8 +65,8 @@ env = MonitorEpisodes(TimeLimit(LtiSystem(), max_episode_steps=int(20e0)))
 agent = Log(  # type: ignore[var-annotated]
     RecordUpdates(
         LstdQLearningAgentCoordinator(
-            rho=LocalMpc.rho,
-            n=LtiSystem.n,
+            rho=rho,
+            n=n,
             G=G,
             Adj=Adj,
             centralised_flag=CENTRALISED,
@@ -362,7 +83,7 @@ agent = Log(  # type: ignore[var-annotated]
             record_td_errors=True,
             exploration=EpsilonGreedyExploration(  # None,
                 epsilon=ExponentialScheduler(0.7, factor=0.99),
-                strength=0.5 * (LtiSystem.a_bnd[1, 0] - LtiSystem.a_bnd[0, 0]),
+                strength=0.5 * (u_bnd[1, 0] - u_bnd[0, 0]),
                 seed=1,
             ),
             experience=ExperienceReplay(  # None,
