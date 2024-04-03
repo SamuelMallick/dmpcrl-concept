@@ -5,7 +5,6 @@ import numpy as np
 from csnlp import Nlp
 from csnlp.wrappers import Mpc
 from dmpcrl.mpc.mpc_admm import MpcAdmm
-from env import LtiSystem
 from model import (
     get_adj,
     get_bounds,
@@ -67,7 +66,9 @@ class CentralizedMpc(Mpc[cs.SX]):
         # create bounds for global state and controls
         x_bnd = np.tile(x_bnd_l, n)
         u_bnd = np.tile(u_bnd_l, n)
-        w = np.tile([[1.2e2, 1.2e2]], (1, n))  # penalty weight for constraint violations in cost
+        w = np.tile(
+            [[1.2e2, 1.2e2]], (1, n)
+        )  # penalty weight for constraint violations in cost
 
         # create parameters in MPC optimization scheme
         A_list = []
@@ -247,7 +248,8 @@ class LocalMpc(MpcAdmm):
             + 0.5
             * cs.sum2(
                 gammapowers * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w @ s)
-            ), rho = rho
+            ),
+            rho=rho,
         )
 
         # solver

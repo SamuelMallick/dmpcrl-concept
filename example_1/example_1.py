@@ -7,22 +7,19 @@ import matplotlib.pyplot as plt
 
 # import networkx as netx
 import numpy as np
-from csnlp import Nlp
 from csnlp.wrappers import Mpc
 from dmpcrl.agents.lstd_ql_coordinator import LstdQLearningAgentCoordinator
 from dmpcrl.core.admm import g_map
-from dmpcrl.mpc.mpc_admm import MpcAdmm
 from env import LtiSystem
 from gymnasium.wrappers import TimeLimit
-from model import get_adj, get_centralized_dynamics, get_learnable_centralized_dynamics, get_model_details, get_bounds
+from learnable_mpc import CentralizedMpc, LocalMpc
+from model import get_adj, get_bounds, get_model_details
 from mpcrl import LearnableParameter, LearnableParametersDict
 from mpcrl.core.experience import ExperienceReplay
 from mpcrl.core.exploration import EpsilonGreedyExploration
 from mpcrl.core.schedulers import ExponentialScheduler
-from mpcrl.util.control import dlqr
 from mpcrl.wrappers.agents import Log, RecordUpdates
 from mpcrl.wrappers.envs import MonitorEpisodes
-from learnable_mpc import CentralizedMpc, LocalMpc
 
 CENTRALISED = False
 
@@ -47,7 +44,9 @@ mpc_dist_list: list[Mpc] = []
 learnable_dist_parameters_list: list[LearnableParametersDict] = []
 fixed_dist_parameters_list: list = []
 for i in range(LtiSystem.n):
-    mpc_dist_list.append(LocalMpc(num_neighbours=len(G[i]) - 1, my_index=G[i].index(i), rho=rho))
+    mpc_dist_list.append(
+        LocalMpc(num_neighbours=len(G[i]) - 1, my_index=G[i].index(i), rho=rho)
+    )
     learnable_dist_parameters_list.append(
         LearnableParametersDict[cs.SX](
             (
