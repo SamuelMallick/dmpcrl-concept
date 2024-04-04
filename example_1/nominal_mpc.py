@@ -9,21 +9,25 @@ from csnlp import Nlp
 from csnlp.wrappers import Mpc
 from env import LtiSystem
 from gymnasium.wrappers import TimeLimit
-from model import get_centralized_dynamics, get_real_model
+from model import get_centralized_dynamics
 from mpcrl.agents.agent import Agent
 from mpcrl.wrappers.agents import Log
 from mpcrl.wrappers.envs import MonitorEpisodes
+from model import get_bounds, get_true_model, get_inac_model, get_model_details
 
 np.random.seed(0)
 
-SAVE = False
+SAVE = True
 TRUE_MODEL = True
 
-n = 3
-nx_l = 2
-nu_l = 1
-x_bnd, a_bnd = LtiSystem.x_bnd, LtiSystem.a_bnd
-w = LtiSystem.w
+n, nx_l, nu_l = get_model_details()
+x_bnd_l, u_bnd_l, _ = get_bounds()
+# create bounds for global state and controls
+x_bnd = np.tile(x_bnd_l, n)
+u_bnd = np.tile(u_bnd_l, n)
+w = np.tile(
+    [[1.2e2, 1.2e2]], (1, n)
+)  # penalty weight for constraint violations in cost
 
 
 class NominalMPC(Mpc[cs.SX]):
@@ -39,7 +43,9 @@ class NominalMPC(Mpc[cs.SX]):
         super().__init__(nlp, N)
 
         # action is normal for scenario
-        u, _ = self.action("u", n * nu_l, lb=-1, ub=1)
+        u, _ = self.action(
+            "u", n * nu_l, lb=u_bnd[0].reshape(-1, 1), ub=u_bnd[1].reshape(-1, 1)
+        )
 
         # state needs to be done manually as we have one state per scenario
         x, _ = self.state("x", n * nx_l)
@@ -52,13 +58,11 @@ class NominalMPC(Mpc[cs.SX]):
 
         # dynamics
         if TRUE_MODEL:
-            A_l, B_l, A_c_l = get_real_model()
+            A_l, B_l, A_c_l = get_true_model()
         else:
-            A_l = np.asarray([[1, 0.25], [0, 1]])
-            B_l = np.asarray([[0.0312], [0.25]])
-            A_c_l = np.array([[0, 0], [0, 0]])
+            A_l, B_l, A_c_l = get_inac_model()
 
-        A, B = get_centralized_dynamics(n, nx_l, A_l, B_l, A_c_l)
+        A, B = get_centralized_dynamics(A_l, B_l, A_c_l)
         self.set_dynamics(lambda x, u: A @ x + B @ u, n_in=2, n_out=1)
 
         # state constraints

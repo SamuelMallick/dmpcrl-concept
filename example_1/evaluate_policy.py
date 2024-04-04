@@ -59,9 +59,15 @@ couple_param_index = 0
 for i in range(n):
     learned_pars[i]["b"] = b[i][-1].reshape(nx_l, 1)
     learned_pars[i]["f"] = f[i][-1].reshape(nx_l + nu_l, 1)
-    learned_pars[i]["V0"] = V0[i][-1].reshape(1,)
-    learned_pars[i]["x_lb"] = bounds[i][-1, :2].reshape(nx_l,)
-    learned_pars[i]["x_ub"] = bounds[i][-1, 2:].reshape(nx_l,)
+    learned_pars[i]["V0"] = V0[i][-1].reshape(
+        1,
+    )
+    learned_pars[i]["x_lb"] = bounds[i][-1, :2].reshape(
+        nx_l,
+    )
+    learned_pars[i]["x_ub"] = bounds[i][-1, 2:].reshape(
+        nx_l,
+    )
     learned_pars[i]["A"] = A[i][-1].reshape(nx_l, nx_l)
     learned_pars[i]["B"] = B[i][-1].reshape(nx_l, nu_l)
     for j in range(len(G[i]) - 1):  # number of neighbors
@@ -144,10 +150,9 @@ else:
     R = np.squeeze(env.ep_rewards)
 
 with open(
-        "eval_pol"
-        + ".pkl",
-        "wb",
-    ) as file:
-        pickle.dump(X, file)
-        pickle.dump(U, file)
-        pickle.dump(R, file)
+    "eval_pol" + ".pkl",
+    "wb",
+) as file:
+    pickle.dump(X, file)
+    pickle.dump(U, file)
+    pickle.dump(R, file)

@@ -9,7 +9,13 @@ from csnlp import Nlp
 from csnlp.wrappers import Mpc
 from env import LtiSystem
 from gymnasium.wrappers import TimeLimit
-from model import get_centralized_dynamics, get_real_model, get_sample_model
+from model import (
+    get_centralized_dynamics,
+    get_bounds,
+    get_model_details,
+    get_true_model,
+    get_model_sample,
+)
 from mpcrl.agents.agent import Agent
 from mpcrl.wrappers.agents import Log
 from mpcrl.wrappers.envs import MonitorEpisodes
@@ -17,15 +23,18 @@ from scipy.linalg import block_diag
 
 np.random.seed(0)
 
-SAVE = False
-TRUE_MODEL = False
+SAVE = True
+TRUE_MODEL = True
 
-n = 3
-nx_l = 2
-nu_l = 1
-num_scenarios = 10
-x_bnd, a_bnd = LtiSystem.x_bnd, LtiSystem.a_bnd
-w = LtiSystem.w
+n, nx_l, nu_l = get_model_details()
+num_scenarios = 100
+x_bnd_l, u_bnd_l, _ = get_bounds()
+# create bounds for global state and controls
+x_bnd = np.tile(x_bnd_l, n)
+u_bnd = np.tile(u_bnd_l, n)
+w = np.tile(
+    [[1.2e2, 1.2e2]], (1, n)
+)  # penalty weight for constraint violations in cost
 
 
 class ScenarioMpc(Mpc[cs.SX]):
@@ -70,8 +79,8 @@ class ScenarioMpc(Mpc[cs.SX]):
 
         # dynamics
         if TRUE_MODEL:
-            A_l, B_l, A_c_l = get_real_model()
-            A, B = get_centralized_dynamics(n, nx_l, A_l, B_l, A_c_l)
+            A_l, B_l, A_c_l = get_true_model()
+            A, B = get_centralized_dynamics(A_l, B_l, A_c_l)
 
             # create dynamics matrices combining all scenarios
             A_full = block_diag(*[A] * num_scenarios)
@@ -84,8 +93,8 @@ class ScenarioMpc(Mpc[cs.SX]):
             A = []
             B = []
             for i in range(num_scenarios):
-                A_l, B_l, A_c_l = get_sample_model()
-                A_temp, B_temp = get_centralized_dynamics(n, nx_l, A_l, B_l, A_c_l)
+                A_l, B_l, A_c_l = get_model_sample()
+                A_temp, B_temp = get_centralized_dynamics(A_l, B_l, A_c_l)
                 A.append(A_temp)
                 B.append(B_temp)
 
@@ -159,7 +168,7 @@ else:
 
 if SAVE:
     with open(
-        f"scen_{num_scenarios}" + ".pkl",
+        f"scen_{num_scenarios}_truemod_{TRUE_MODEL}" + ".pkl",
         "wb",
     ) as file:
         pickle.dump(X, file)
