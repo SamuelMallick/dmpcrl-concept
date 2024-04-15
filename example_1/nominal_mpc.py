@@ -18,7 +18,7 @@ from model import get_bounds, get_true_model, get_inac_model, get_model_details
 np.random.seed(0)
 
 SAVE = True
-TRUE_MODEL = True
+TRUE_MODEL = False
 
 n, nx_l, nu_l = get_model_details()
 x_bnd_l, u_bnd_l, _ = get_bounds()
@@ -34,7 +34,7 @@ class NominalMPC(Mpc[cs.SX]):
     """A simple randomised scenario based MPC."""
 
     horizon = 10
-    discount_factor = 1
+    discount_factor = 0.9
 
     def __init__(self) -> None:
         N = self.horizon

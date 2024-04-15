@@ -24,10 +24,10 @@ from scipy.linalg import block_diag
 np.random.seed(0)
 
 SAVE = True
-TRUE_MODEL = True
+TRUE_MODEL = False
 
 n, nx_l, nu_l = get_model_details()
-num_scenarios = 100
+num_scenarios = 25
 x_bnd_l, u_bnd_l, _ = get_bounds()
 # create bounds for global state and controls
 x_bnd = np.tile(x_bnd_l, n)

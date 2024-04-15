@@ -168,6 +168,7 @@ class LocalMpc(MpcAdmm):
 
         N = self.horizon
         gamma = self.discount_factor
+        self.rho = rho
 
         # init underlying optimziation problem
         nlp = Nlp[cs.SX]()
@@ -248,8 +249,7 @@ class LocalMpc(MpcAdmm):
             + 0.5
             * cs.sum2(
                 gammapowers * (cs.sum1(x[:, :-1] ** 2) + 0.5 * cs.sum1(u**2) + w @ s)
-            ),
-            rho=rho,
+            )
         )
 
         # solver

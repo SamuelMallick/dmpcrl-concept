@@ -39,7 +39,7 @@ n, nx_l, nu_l = get_model_details()
 _, u_bnd, _ = get_bounds()
 
 with open(
-    "data/academic_ex_data/line_416/distributed.pkl",
+    "data/example_1/line_416/distributed.pkl",
     "rb",
 ) as file:
     X = pickle.load(file)
@@ -54,24 +54,25 @@ with open(
     B = pickle.load(file)
     A_cs = pickle.load(file)
 
+policy_time_step = 7500
 learned_pars: list[dict] = [{}, {}, {}]
 couple_param_index = 0
 for i in range(n):
-    learned_pars[i]["b"] = b[i][-1].reshape(nx_l, 1)
-    learned_pars[i]["f"] = f[i][-1].reshape(nx_l + nu_l, 1)
-    learned_pars[i]["V0"] = V0[i][-1].reshape(
+    learned_pars[i]["b"] = b[i][policy_time_step].reshape(nx_l, 1)
+    learned_pars[i]["f"] = f[i][policy_time_step].reshape(nx_l + nu_l, 1)
+    learned_pars[i]["V0"] = V0[i][policy_time_step].reshape(
         1,
     )
-    learned_pars[i]["x_lb"] = bounds[i][-1, :2].reshape(
+    learned_pars[i]["x_lb"] = bounds[i][policy_time_step, :2].reshape(
         nx_l,
     )
-    learned_pars[i]["x_ub"] = bounds[i][-1, 2:].reshape(
+    learned_pars[i]["x_ub"] = bounds[i][policy_time_step, 2:].reshape(
         nx_l,
     )
-    learned_pars[i]["A"] = A[i][-1].reshape(nx_l, nx_l)
-    learned_pars[i]["B"] = B[i][-1].reshape(nx_l, nu_l)
+    learned_pars[i]["A"] = A[i][policy_time_step].reshape(nx_l, nx_l)
+    learned_pars[i]["B"] = B[i][policy_time_step].reshape(nx_l, nu_l)
     for j in range(len(G[i]) - 1):  # number of neighbors
-        learned_pars[i][f"A_c_{j}"] = A_cs[couple_param_index][-1].reshape(nx_l, nx_l)
+        learned_pars[i][f"A_c_{j}"] = A_cs[couple_param_index][policy_time_step].reshape(nx_l, nx_l)
         couple_param_index += 1
 
 # now, let's create the instances of such classes and start the training
@@ -150,7 +151,7 @@ else:
     R = np.squeeze(env.ep_rewards)
 
 with open(
-    "eval_pol" + ".pkl",
+    f"eval_pol_step_{policy_time_step}" + ".pkl",
     "wb",
 ) as file:
     pickle.dump(X, file)

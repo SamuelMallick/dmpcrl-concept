@@ -56,8 +56,8 @@ def get_inac_model():
 
 
 # distribution of model uncertainty. A uniform distribution centrered around the known inaccurate model
-range_A = 0.15
-range_B = 0.1
+range_A = 0.1
+range_B = 0.075
 
 
 def get_model_sample():
@@ -72,10 +72,10 @@ def get_model_sample():
         ]
     )
     A_c_l_sample = A_c_l_inac + np.array(
-        [[0, 0], [0, np.random.uniform(-range_A, range_A)]]
+        [[0, 0], [0, np.random.uniform(-range_A, 0)]]
     )
     B_l_sample = B_l_inac + np.array(
-        [[np.random.uniform(-range_B, range_B)], [np.random.uniform(-range_B, range_B)]]
+        [[np.random.uniform(0, range_B)], [np.random.uniform(-range_B, 0)]]
     )
     return A_l_sample, B_l_sample, A_c_l_sample
 
