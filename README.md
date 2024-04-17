@@ -25,7 +25,7 @@ If you find the paper or this repository helpful in your publications, please co
 
 ## Installation
 
-The code was created with `Python 3.9`. To access it, clone the repository
+The code was created with `Python 3.11`. To access it, clone the repository
 
 ```bash
 git clone https://github.com/SamuelMallick/dmpcrl-concept.git
@@ -45,7 +45,7 @@ The repository code is structured in the following way
 - **`data`** contains the .pkl data files that have been generated for the paper Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator.
 - **`plotting`** contains scripts that are used for generating the images used in the paper Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator.
 - **`power_system`** contains contains all files relating to the power system example in the paper Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator. q_learning_power.py runs the MARL training algorithm.
-- **`academic_example.py`** runs the MARL training algorithm for the academic example in Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator.
+- **`example_1`** contains contains all files relating to the power system example in the paper Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator. example_1.py.py runs the MARL training algorithm.
 ## License
 
 The repository is provided under the GNU General Public License. See the [LICENSE](https://github.com/SamuelMallick/dmpcrl-concept/blob/main/LICENSE) file included with this repository.
