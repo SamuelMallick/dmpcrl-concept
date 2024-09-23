@@ -5,19 +5,21 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-This repository contains the source code used to produce the results obtained in [Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator](https://arxiv.org/abs/2312.05166) submitted to [Automatica](https://www.sciencedirect.com/journal/automatica/vol/160/suppl/C).
+This repository contains the source code used to produce the results obtained in [Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator](https://arxiv.org/abs/2312.05166) published in [Automatica](https://www.sciencedirect.com/journal/automatica/vol/160/suppl/C).
 
 In this work we propose the use of a distributed model predictive control scheme as a function approximator for multi-agent reinforcement learning. We consider networks of linear dynamical systems.
 
 If you find the paper or this repository helpful in your publications, please consider citing it.
 
 ```bibtex
-@article{mallick2023multi,
-  title = {Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator},
-  author = {Mallick, Samuel and Airaldi, Filippo and Dabiri, Azita and De Schutter, Bart},
-  journal={arXiv preprint arXiv:2312.05166},
-  year = {2023},
-  url = {https://arxiv.org/abs/2312.05166}
+@article{mallick2024multi,
+  title={Multi-agent reinforcement learning via distributed MPC as a function approximator},
+  author={Mallick, Samuel and Airaldi, Filippo and Dabiri, Azita and De Schutter, Bart},
+  journal={Automatica},
+  volume={167},
+  pages={111803},
+  year={2024},
+  publisher={Elsevier}
 }
 ```
 
