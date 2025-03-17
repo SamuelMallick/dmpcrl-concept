@@ -5,7 +5,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
-This repository contains the source code used to produce the results obtained in [Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator](https://arxiv.org/abs/2312.05166) published in [Automatica](https://www.sciencedirect.com/journal/automatica/vol/160/suppl/C).
+This repository contains the source code used to produce the results obtained in [Multi-Agent Reinforcement Learning via Distributed MPC as a Function Approximator](https://www.sciencedirect.com/science/article/pii/S0005109824002978) published in [Automatica](https://www.sciencedirect.com/journal/automatica/vol/160/suppl/C).
 
 In this work we propose the use of a distributed model predictive control scheme as a function approximator for multi-agent reinforcement learning. We consider networks of linear dynamical systems.
 
